@@ -13,3 +13,19 @@ def events_filter(df_events: pl.DataFrame, year: int, month: int) -> pl.DataFram
     )
 
     return df_events
+
+def filter_year_month(df: pl.DataFrame, year:int, month: int) -> pl.DataFrame:
+
+    date_column_name = ["timestamp", "Date/Time", "hour_interval"]
+
+    for time in date_column_name:
+
+        try:
+            df = df.filter((pl.col(time).dt.year()==year) & 
+                           (pl.col(time).dt.month()==month))
+            break
+            
+        except pl.exceptions.ColumnNotFoundError:
+            continue
+    
+    return df

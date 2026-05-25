@@ -3,8 +3,7 @@ import os
 from pathlib import Path
 import datetime
 
-from src.utils.utils import events_filter
-
+from src.ETL.etl import ReportETL
 
 current_date = datetime.datetime.today()
 
@@ -58,28 +57,22 @@ path_2 = Path()
 
 plant_db     = pl.read_parquet(path_1 / "plant_db.parquet")
 
-poa          = pl.read_parquet(path_1 / "parks_poa_irradiance.parquet").filter((pl.col("timestamp").dt.year()==year) & 
-                                                                               (pl.col("timestamp").dt.month()==month))
+poa          = pl.read_parquet(path_1 / "parks_poa_irradiance.parquet")
 
-temp_panel   = pl.read_parquet(path_1 / "parks_panel_temperature.parquet").filter((pl.col("timestamp").dt.year()==year) & 
-                                                                                  (pl.col("timestamp").dt.month()==month))
+temp_panel   = pl.read_parquet(path_1 / "parks_panel_temperature.parquet")
 
-temp_amb     = pl.read_parquet(path_1 / "parks_ambient_temperature.parquet").filter((pl.col("timestamp").dt.year()==year) & 
-                                                                                    (pl.col("timestamp").dt.month()==month))
+temp_amb     = pl.read_parquet(path_1 / "parks_ambient_temperature.parquet")
 
-prmte        = pl.read_parquet(path_1 / "prmte_consolidado.parquet").filter((pl.col("Date/Time").dt.year()==year) & 
-                                                                            (pl.col("Date/Time").dt.month()==month))
+prmte        = pl.read_parquet(path_1 / "prmte_consolidado.parquet")
 
-projected    = pl.read_parquet(path_1 / "projected_data.parquet").filter((pl.col("hour_interval").dt.year()==year) & 
-                                                                         (pl.col("hour_interval").dt.month()==month))
-
+projected    = pl.read_parquet(path_1 / "projected_data.parquet")
 
 reco_events  = pl.read_parquet(path_1 / "rcc_recloser_events.parquet")
-reco_events  = events_filter(reco_events, year, month)
 
 equip_events = pl.read_parquet(path_1 / "rcc_events.parquet")
-equip_events = events_filter(equip_events, year, month)
+
 curtailments = pl.read_parquet(path_1 / "rcc_limitations.parquet")
 
-print(reco_events)
-print(equip_events)
+Data = ReportETL(poa, temp_panel, temp_amb, prmte, projected, reco_events, equip_events, curtailments, year, month)
+
+print(Data.poa_irradiation)
