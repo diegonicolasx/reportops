@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 import datetime
 
+from src.utils.utils import events_filter
+
 
 current_date = datetime.datetime.today()
 
@@ -73,5 +75,11 @@ projected    = pl.read_parquet(path_1 / "projected_data.parquet").filter((pl.col
 
 
 reco_events  = pl.read_parquet(path_1 / "rcc_recloser_events.parquet")
+reco_events  = events_filter(reco_events, year, month)
+
 equip_events = pl.read_parquet(path_1 / "rcc_events.parquet")
+equip_events = events_filter(equip_events, year, month)
 curtailments = pl.read_parquet(path_1 / "rcc_limitations.parquet")
+
+print(reco_events)
+print(equip_events)
