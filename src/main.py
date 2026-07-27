@@ -3,7 +3,8 @@ import os
 from pathlib import Path
 import datetime
 
-from src.ETL.etl import ReportETL
+from src.etl.etl import Extractor, Park
+from src.group_1.group1_report import G1_report
 
 current_date = datetime.datetime.today()
 
@@ -48,31 +49,15 @@ while True:
         print("Error en el formato \n")
 
 
-## Traer los datos de las bases de datos. La Radiación de los pira, la temperatura de panel, los datos del prmte, los datos de inyeccion,
-## datos proyectados
-## Los datos del RCC, datos de curtailment
+extractor = Extractor(year, month).run()
 
-path_1 = Path(r"C:\OENERGY Dropbox\0600-O&M\611 - Datos y reportería\projects\stage\results")
-path_2 = Path()
+plant_db = extractor.plant_db
 
-plant_db     = pl.read_parquet(path_1 / "plant_db.parquet")
+parque = Park(id=54, extractor=extractor)
 
-poa          = pl.read_parquet(path_1 / "parks_poa_irradiance.parquet")
+example = G1_report(parque)
 
-temp_panel   = pl.read_parquet(path_1 / "parks_panel_temperature.parquet")
+example.run()
 
-temp_amb     = pl.read_parquet(path_1 / "parks_ambient_temperature.parquet")
 
-prmte        = pl.read_parquet(path_1 / "prmte_consolidado.parquet")
 
-projected    = pl.read_parquet(path_1 / "projected_data.parquet")
-
-reco_events  = pl.read_parquet(path_1 / "rcc_recloser_events.parquet")
-
-equip_events = pl.read_parquet(path_1 / "rcc_events.parquet")
-
-curtailments = pl.read_parquet(path_1 / "rcc_limitations.parquet")
-
-Data = ReportETL(poa, temp_panel, temp_amb, prmte, projected, reco_events, equip_events, curtailments, year, month)
-
-print(Data.poa_irradiation)
