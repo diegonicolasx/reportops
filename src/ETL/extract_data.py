@@ -64,6 +64,25 @@ def _get_plant_poa_irradiance(conn: connection,year:int, month:int):
 
     return _to_polars_dataframe(data)
 
+def _get_plant_ghi_irradiance(conn:connection, year:int, month: int):
+
+    query = """
+        SELECT id_parq as id, fch_dato as timestamp, rad_valor, id_compensacion
+        FROM ods.plant_ghi_irradiance
+        WHERE EXTRACT(MONTH FROM fch_dato) = %s 
+        AND EXTRACT(YEAR FROM fch_dato) = %s
+        ORDER BY id_parq ASC, fch_dato ASC;
+    """
+    with conn.cursor() as cur:
+        cur.execute(query, (month, year))
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        data = [dict(zip(columns, row)) for row in rows]
+    
+    return _to_polars_dataframe(data)
+
+
+
 def _get_panel_temperature(conn: connection,year:int, month:int):
 
     """Obtiene los datos de la tabla plant_poa_irradiance desde la base de datos DYR."""
@@ -200,6 +219,56 @@ def extract_parks(conn: connection = None,year:int = None, month:int = None) -> 
         poa = _get_plant_poa_irradiance(conn,year,month)
 
     return poa, injection
+
+def extract_ghi_irradiance(conn:connection = None, year: int= None, month: int= None) -> pl.DataFrame:
+
+    '''
+        Retorna un dataframe con la temperatura de panel o ambiente de los parques.
+
+        Parametros
+        ----------
+
+        option
+            Determina se extraen los datos de manera local o del servidor.
+            1. Carga los datos desde la carpeta results de stage
+            2. Consulta SQL con datos del servidor DYR
+
+        year
+            filtra el año de parks, debe ser menor o igual al año actual
+
+        month
+            filtra el mes de interes. 
+
+        type
+            Permite seleccionar temperatura de panel o ambiente
+    
+        '''
+
+    path = Path(r"C:\OENERGY Dropbox\0600-O&M\611 - Datos y reportería\projects\stage\results\parks_ghi_irradiance.parquet")
+
+    today = datetime.date.today()
+    assert year is not None and month is not None, "El año y mes no tienen valores"
+
+    assert 1 <= month <= 12, "El mes debe estar entre 1 y 12"
+    assert (year, month) <= (today.year, today.month), "La fecha no puede ser futura"
+
+
+    if conn is None :
+
+        ghi = pl.read_parquet(path)
+        ghi = (
+            ghi.filter(
+                (pl.col("timestamp").dt.year()==year) &
+                (pl.col("timestamp").dt.month() == month)
+            )
+        )
+
+    else: 
+
+        ghi = _get_plant_ghi_irradiance(conn, year, month)
+    #print(_sensor_exclusion(conn, year, month))
+
+    return ghi   
 
 
 def extract_panel_temperature(conn: connection = None,year:int = None, month:int = None) -> pl.DataFrame:

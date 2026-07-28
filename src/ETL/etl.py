@@ -1,6 +1,8 @@
 import polars as pl
 from src.utils.utils import events_filter, filter_year_month, add_portfolio
 from src.etl.extract_data import *
+import calendar
+
 
 from dotenv import load_dotenv
 
@@ -13,8 +15,10 @@ class Extractor:
         self.year = year
         self.month = month
         self.option = option
+        self.num_days = self._num_days()
 
         self.poa = None
+        self.ghi = None
         self.generation = None
         self.panel_temperature = None
         self.ambient_temperature = None
@@ -36,6 +40,10 @@ class Extractor:
 
         return self
 
+    def _num_days(self) -> int:
+        _ , dias = calendar.monthrange(self.year, self.month)
+        return dias
+
     def _extract_all(self, conn):
 
         raw_plant_db = plant_db(conn)
@@ -49,6 +57,7 @@ class Extractor:
         )
 
         self.poa, self.generation = extract_parks(conn=conn, year=self.year, month=self.month)
+        self.ghi                  = extract_ghi_irradiance(conn=conn, year=self.year, month=self.month)
         self.panel_temperature    = extract_panel_temperature(conn=conn, year=self.year, month=self.month)
         self.ambient_temperature  = extract_ambient_temperature(conn=conn, year=self.year, month=self.month)
         self.prmte                = extract_prmte(conn=conn, year=self.year, month=self.month)
@@ -66,6 +75,7 @@ class Park:
         self.plant_info                = extractor.plant_db.filter(pl.col("id")==id)
         self.year                      = extractor.year
         self.month                     = extractor.month
+        self.num_days                  = extractor.num_days
 
         self.om_name = self._get_om_name()
         self.rcc_name = self._get_rcc_name()
@@ -73,6 +83,7 @@ class Park:
 
 
         self.plant_poa                 = extractor.poa.filter(pl.col("id")==id)
+        self.plant_ghi                 = extractor.ghi.filter(pl.col("id")==id)
         self.plant_panel_temperature   = extractor.panel_temperature.filter(pl.col("id")==id)
         self.plant_ambient_temperature = extractor.ambient_temperature.filter(pl.col("id")==id)
         self.plant_prmte               = extractor.prmte.filter(pl.col("id")==id)

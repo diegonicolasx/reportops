@@ -45,6 +45,3 @@ class G1_report:
         file_name = f"Generation Report {month_name} {self.park.year} - {self.park.om_name}.xlsx"
 
         return file_name
-
-
-    
